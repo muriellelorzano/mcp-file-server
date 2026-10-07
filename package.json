@@ -1,27 +1,24 @@
 {
   "name": "mcp-file-server",
   "version": "1.0.0",
-  "description": "Sandboxed MCP file-server connector with git-lite tools and a handoff protocol",
-  "type": "module",
-  "main": "dist/index.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "dev": "tsx src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "test": "node --import tsx --test --test-reporter=spec test/*.test.ts",
-    "demo": "tsx scripts/demo.ts",
-    "inspector": "npx @modelcontextprotocol/inspector"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "license": "MIT",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "express": "^5.2.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^22.20.5",
+    "@types/node": "^26.6.4",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   }
 }
