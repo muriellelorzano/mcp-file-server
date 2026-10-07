@@ -29,7 +29,9 @@ export function createServer(ctx: Context): Server {
       if (name === "list_files") {
         const input = ListFilesSchema.parse(args ?? {});
         const result = await listFiles(input, ctx.services);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
       }
 
       return {
@@ -74,4 +76,3 @@ export function createServer(ctx: Context): Server {
 
   return server;
 }
-

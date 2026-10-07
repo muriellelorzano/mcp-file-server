@@ -1,26 +1,27 @@
 import express from "express";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamablehttp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Services } from "../core/services.js";
+import { requireAuth, type Authenticate } from "./auth.js";
 import { createServer } from "./createServer.js";
 
-export function createApp(services: Services): express.Application {
+export function createApp(services: Services, authenticate: Authenticate) {
   const app = express();
-
+  app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
 
+  // public: reveals nothing except that the process is up
   app.get("/healthz", (_req, res) => {
     res.json({ ok: true });
   });
 
-  // Stateless Streamable HTTP: fresh server + transport per request
+  // every method on /mcp requires a valid token, so 405s don't leak either
+  app.use("/mcp", requireAuth(authenticate));
+
   app.post("/mcp", async (req, res) => {
-    // M3: replace with the agentId set by the auth middleware
-    const agentId = "anonymous";
+    const agentId = res.locals.agentId as string;
 
     const server = createServer({ agentId, services });
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 
     res.on("close", () => {
       void transport.close();
@@ -42,7 +43,6 @@ export function createApp(services: Services): express.Application {
     }
   });
 
-  // Stateless mode has no server-initiated stream or session to delete
   const methodNotAllowed = (_req: express.Request, res: express.Response) => {
     res.status(405).json({
       jsonrpc: "2.0",
@@ -55,4 +55,3 @@ export function createApp(services: Services): express.Application {
 
   return app;
 }
-
