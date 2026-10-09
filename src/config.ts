@@ -13,6 +13,9 @@ const Env = z.object({
   MAX_SEARCH_FILES: z.coerce.number().int().min(1).default(2000),
   LOCK_TIMEOUT_MS: z.coerce.number().int().min(1).default(3000),
   AGENT_TOKENS: z.string().min(1, "AGENT_TOKENS is required"),
+  AUDIT_PATH: z.string().min(1).default("./logs/audit.jsonl"),
+  MAX_DIFF_BYTES: z.coerce.number().int().min(1).default(100_000),
+  GIT_TIMEOUT_MS: z.coerce.number().int().min(100).default(10_000),
 });
 
 export type Limits = Readonly<{
@@ -21,6 +24,8 @@ export type Limits = Readonly<{
   maxReadBytes: number;
   maxSearchFiles: number;
   lockTimeoutMs: number;
+  maxDiffBytes: number;
+  gitTimeoutMs: number;
 }>;
 
 export type Config = Readonly<{
@@ -29,6 +34,7 @@ export type Config = Readonly<{
   limits: Limits;
   /** token -> agentId */
   agentTokens: ReadonlyMap<string, string>;
+  auditPath: string;
 }>;
 
 /** Parses "token:agent-a,token:agent-b". Error messages never echo token values. */
@@ -77,7 +83,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       maxReadBytes: e.MAX_READ_BYTES,
       maxSearchFiles: e.MAX_SEARCH_FILES,
       lockTimeoutMs: e.LOCK_TIMEOUT_MS,
+      maxDiffBytes: e.MAX_DIFF_BYTES,
+      gitTimeoutMs: e.GIT_TIMEOUT_MS,
     }),
     agentTokens: parseAgentTokens(e.AGENT_TOKENS),
+    auditPath: path.resolve(e.AUDIT_PATH),
   });
 }

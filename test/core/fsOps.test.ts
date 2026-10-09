@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import path from "node:path"; 
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ConflictError,
@@ -103,7 +103,7 @@ describe("read_file", () => {
   it("refuses binary files", async () => {
     await fs.writeFile(
       path.join(ws.root, "img.bin"),
-        new Uint8Array([0x89, 0x50, 0x00, 0x47]),
+      new Uint8Array([0x89, 0x50, 0x00, 0x47]),
     );
     await expect(fsOps().read("img.bin")).rejects.toThrow(InvalidContentError);
   });
@@ -195,7 +195,7 @@ describe("list_files and search_files", () => {
   });
 
   it("does not follow symlinks while listing", async () => {
-    await fs.symlink(ws.outside, path.join(ws.root, "link"));
+    await fs.symlink(ws.outside, path.join(ws.root, "link"), "junction");
     const r = await fsOps().list(".", true);
     expect(r.entries.map((e) => e.path)).not.toContain("link/secret.txt");
   });

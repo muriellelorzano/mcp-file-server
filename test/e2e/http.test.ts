@@ -21,8 +21,11 @@ const baseHeaders = {
 beforeAll(async () => {
   ws = await makeWorkspace();
   const app = createApp(ws.services, createAuthenticator(ws.config.agentTokens));
-  await new Promise<void>((resolve) => {
-    server = app.listen(0, "127.0.0.1", resolve);
+  await new Promise<void>((resolve, reject) => {
+    server = app.listen(0, "127.0.0.1", (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
   });
   url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });

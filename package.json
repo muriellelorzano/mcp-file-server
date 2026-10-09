@@ -2,13 +2,15 @@
   "name": "mcp-file-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deps": "depcruise src --config .dependency-cruiser.cjs",
-    "typecheck": "tsc --noEmit",
-    "dev": "tsx src/index.ts"
+    "deps": "depcruise src --config .dependency-cruiser.cjs"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +26,7 @@
     "@types/node": "^26.6.4",
     "dependency-cruiser": "^18.5.0",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^5.0.3"
   },
   "allowScripts": {

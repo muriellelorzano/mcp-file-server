@@ -1,7 +1,12 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ConflictError, InvalidContentError, NotFoundError, TooLargeError } from "./errors.js";
+import {
+  ConflictError,
+  InvalidContentError,
+  NotFoundError,
+  TooLargeError,
+} from "./errors.js";
 import type { Limits } from "../config.js";
 import type { Locks } from "./locks.js";
 import type { Sandbox } from "./sandbox.js";
@@ -9,12 +14,29 @@ import type { Sandbox } from "./sandbox.js";
 const TEMP_SUFFIX = ".tmp";
 
 /** Result types */
-export type Entry = { path: string; type: "file" | "dir"; size: number; mtime: string };
+export type Entry = {
+  path: string;
+  type: "file" | "dir";
+  size: number;
+  mtime: string;
+};
 export type ListResult = { entries: Entry[]; truncated: boolean };
-export type ReadResult = { path: string; content: string; sha256: string; size: number; offset: number; truncated: boolean };
+export type ReadResult = {
+  path: string;
+  content: string;
+  sha256: string;
+  size: number;
+  offset: number;
+  truncated: boolean;
+};
 export type SearchMatch = { path: string; line: number; text: string };
 export type SearchResult = { matches: SearchMatch[]; truncated: boolean };
-export type WriteResult = { path: string; sha256: string; size: number; created: boolean };
+export type WriteResult = {
+  path: string;
+  sha256: string;
+  size: number;
+  created: boolean;
+};
 export type EditResult = { path: string; sha256: string; replacements: number };
 export type MoveResult = { from: string; to: string };
 export type RemoveResult = { deleted: boolean };
@@ -29,11 +51,13 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
   }
 
   function assertSize(size: number, max: number): void {
-    if (size > max) throw new TooLargeError(`File too large: ${size} bytes (max ${max})`);
+    if (size > max)
+      throw new TooLargeError(`File too large: ${size} bytes (max ${max})`);
   }
 
   function assertText(buf: Buffer): string {
-    if (buf.includes(0)) throw new InvalidContentError("Binary files are not supported");
+    if (buf.includes(0))
+      throw new InvalidContentError("Binary files are not supported");
     return buf.toString("utf8");
   }
 
@@ -43,14 +67,17 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
 
   async function readBuf(abs: string, relForErr: string): Promise<Buffer> {
     const st = await fs.stat(abs);
-    if (!st.isFile()) throw new InvalidContentError(`Not a regular file: ${relForErr}`);
+    if (!st.isFile())
+      throw new InvalidContentError(`Not a regular file: ${relForErr}`);
     assertSize(st.size, limits.maxReadBytes);
     return fs.readFile(abs);
   }
 
   function checkHash(expected: string, actual: string): void {
     if (expected !== actual) {
-      throw new ConflictError(`File changed since you read it (current sha256: ${actual})`);
+      throw new ConflictError(
+        `File changed since you read it (current sha256: ${actual})`,
+      );
     }
   }
 
@@ -86,9 +113,13 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
   // ---------- read-only ----------
 
   async function list(rel = ".", recursive = false): Promise<ListResult> {
-    const start = await sandbox.resolveSafePath(rel, { mustExist: true, allowRoot: true });
+    const start = await sandbox.resolveSafePath(rel, {
+      mustExist: true,
+      allowRoot: true,
+    });
     const st = await fs.stat(start);
-    if (!st.isDirectory()) throw new InvalidContentError(`Not a directory: ${rel}`);
+    if (!st.isDirectory())
+      throw new InvalidContentError(`Not a directory: ${rel}`);
 
     const entries: Entry[] = [];
     let truncated = false;
@@ -110,7 +141,11 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
     return { entries, truncated };
   }
 
-  async function read(rel: string, offset = 0, length?: number): Promise<ReadResult> {
+  async function read(
+    rel: string,
+    offset = 0,
+    length?: number,
+  ): Promise<ReadResult> {
     const abs = await sandbox.resolveSafePath(rel, { mustExist: true });
     const buf = await readBuf(abs, rel);
     const text = assertText(buf);
@@ -126,8 +161,15 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
     };
   }
 
-  async function search(query: string, rel = ".", maxResults = 50): Promise<SearchResult> {
-    const start = await sandbox.resolveSafePath(rel, { mustExist: true, allowRoot: true });
+  async function search(
+    query: string,
+    rel = ".",
+    maxResults = 50,
+  ): Promise<SearchResult> {
+    const start = await sandbox.resolveSafePath(rel, {
+      mustExist: true,
+      allowRoot: true,
+    });
     const st = await fs.stat(start);
     const limit = Math.min(maxResults, 100);
     const needle = query.toLowerCase();
@@ -198,8 +240,10 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
 
       if (st) {
         created = false;
-        if (!st.isFile()) throw new InvalidContentError(`Not a regular file: ${rel}`);
-        if (opts.createOnly) throw new ConflictError(`File already exists: ${rel}`);
+        if (!st.isFile())
+          throw new InvalidContentError(`Not a regular file: ${rel}`);
+        if (opts.createOnly)
+          throw new ConflictError(`File already exists: ${rel}`);
         if (!opts.expectedSha256) {
           throw new ConflictError(
             "expected_sha256 is required to overwrite an existing file (call read_file first)",
@@ -207,17 +251,32 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
         }
         checkHash(opts.expectedSha256, sha256Of(await readBuf(abs, rel)));
       } else if (opts.expectedSha256) {
-        throw new ConflictError(`File does not exist but expected_sha256 was given: ${rel}`);
+        throw new ConflictError(
+          `File does not exist but expected_sha256 was given: ${rel}`,
+        );
       }
 
       await mkdirParents(abs);
       await atomicWrite(abs, data);
-      return { path: sandbox.toRelative(abs), sha256: sha256Of(data), size: data.length, created };
+      return {
+        path: sandbox.toRelative(abs),
+        sha256: sha256Of(data),
+        size: data.length,
+        created,
+      };
     });
   }
 
-  async function edit(rel: string, oldStr: string, newStr: string, expectedSha256?: string): Promise<EditResult> {
-    const abs = await sandbox.resolveSafePath(rel, { mustExist: true, write: true });
+  async function edit(
+    rel: string,
+    oldStr: string,
+    newStr: string,
+    expectedSha256?: string,
+  ): Promise<EditResult> {
+    const abs = await sandbox.resolveSafePath(rel, {
+      mustExist: true,
+      write: true,
+    });
 
     return locks.withLock(abs, async () => {
       const buf = await readBuf(abs, rel);
@@ -227,29 +286,42 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
       const first = text.indexOf(oldStr);
       if (first === -1) throw new ConflictError("old_string not found in file");
       if (text.indexOf(oldStr, first + 1) !== -1) {
-        throw new ConflictError("old_string matches more than once; add more context");
+        throw new ConflictError(
+          "old_string matches more than once; add more context",
+        );
       }
 
-      const next = text.slice(0, first) + newStr + text.slice(first + oldStr.length);
+      const next =
+        text.slice(0, first) + newStr + text.slice(first + oldStr.length);
       const data = Buffer.from(next, "utf8");
       assertSize(data.length, limits.maxFileBytes);
       assertText(data);
 
       await atomicWrite(abs, data);
-      return { path: sandbox.toRelative(abs), sha256: sha256Of(data), replacements: 1 };
+      return {
+        path: sandbox.toRelative(abs),
+        sha256: sha256Of(data),
+        replacements: 1,
+      };
     });
   }
 
   async function move(fromRel: string, toRel: string): Promise<MoveResult> {
-    const src = await sandbox.resolveSafePath(fromRel, { mustExist: true, write: true });
+    const src = await sandbox.resolveSafePath(fromRel, {
+      mustExist: true,
+      write: true,
+    });
     const dst = await sandbox.resolveSafePath(toRel, { write: true });
-    if (src === dst) throw new ConflictError("Source and destination are the same");
+    if (src === dst)
+      throw new ConflictError("Source and destination are the same");
 
     return locks.withLock([src, dst], async () => {
       const st = await statOrNull(src);
       if (!st) throw new NotFoundError(`Not found: ${fromRel}`);
-      if (!st.isFile()) throw new InvalidContentError("Only files can be moved");
-      if (await statOrNull(dst)) throw new ConflictError(`Destination already exists: ${toRel}`);
+      if (!st.isFile())
+        throw new InvalidContentError("Only files can be moved");
+      if (await statOrNull(dst))
+        throw new ConflictError(`Destination already exists: ${toRel}`);
 
       await mkdirParents(dst);
       await fs.rename(src, dst);
@@ -257,8 +329,14 @@ export function createFsOps(sandbox: Sandbox, locks: Locks, limits: Limits) {
     });
   }
 
-  async function remove(rel: string, expectedSha256: string): Promise<RemoveResult> {
-    const abs = await sandbox.resolveSafePath(rel, { mustExist: true, write: true });
+  async function remove(
+    rel: string,
+    expectedSha256: string,
+  ): Promise<RemoveResult> {
+    const abs = await sandbox.resolveSafePath(rel, {
+      mustExist: true,
+      write: true,
+    });
 
     return locks.withLock(abs, async () => {
       const buf = await readBuf(abs, rel);

@@ -11,4 +11,4 @@ export class ConflictError extends AppError {}
 export class TooLargeError extends AppError {}
 export class InvalidContentError extends AppError {}
 export class LockTimeoutError extends AppError {}
-
+export class GitError extends AppError {}
