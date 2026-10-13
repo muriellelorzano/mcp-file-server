@@ -4,9 +4,12 @@ import type { Services } from "../core/services.js";
 import { requireAuth, type Authenticate } from "./auth.js";
 import { createServer } from "./createServer.js";
 
+const MCP_PATHS = ["/mcp", "/mcp/:key"];
+
 export function createApp(services: Services, authenticate: Authenticate) {
   const app = express();
   app.disable("x-powered-by");
+  app.set("trust proxy", 1);
   app.use(express.json({ limit: "1mb" }));
 
   // public: reveals nothing except that the process is up
@@ -15,13 +18,15 @@ export function createApp(services: Services, authenticate: Authenticate) {
   });
 
   // every method on /mcp requires a valid token, so 405s don't leak either
-  app.use("/mcp", requireAuth(authenticate));
+  app.all(MCP_PATHS, requireAuth(authenticate));
 
-  app.post("/mcp", async (req, res) => {
+  app.post(MCP_PATHS, async (req, res) => {
     const agentId = res.locals.agentId as string;
 
     const server = createServer({ agentId, services });
-    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
 
     res.on("close", () => {
       void transport.close();
@@ -50,8 +55,7 @@ export function createApp(services: Services, authenticate: Authenticate) {
       id: null,
     });
   };
-  app.get("/mcp", methodNotAllowed);
-  app.delete("/mcp", methodNotAllowed);
-
+  app.get(MCP_PATHS, methodNotAllowed);
+  app.delete(MCP_PATHS, methodNotAllowed);
   return app;
 }

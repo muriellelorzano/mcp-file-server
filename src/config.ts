@@ -47,22 +47,36 @@ export function parseAgentTokens(raw: string): ReadonlyMap<string, string> {
     if (!entry) continue;
 
     const idx = entry.indexOf(":");
-    if (idx === -1) throw new Error(`AGENT_TOKENS entry ${i + 1} must look like token:agent-id`);
+    if (idx === -1)
+      throw new Error(
+        `AGENT_TOKENS entry ${i + 1} must look like token:agent-id`,
+      );
 
     const token = entry.slice(0, idx);
     const agent = entry.slice(idx + 1);
 
     if (token.length < MIN_TOKEN_LENGTH) {
-      throw new Error(`AGENT_TOKENS entry ${i + 1}: token must be at least ${MIN_TOKEN_LENGTH} characters`);
+      throw new Error(
+        `AGENT_TOKENS entry ${i + 1}: token must be at least ${MIN_TOKEN_LENGTH} characters`,
+      );
     }
-    if (!/^[A-Za-z0-9._~+/=-]+$/.test(token)) {
-      throw new Error(`AGENT_TOKENS entry ${i + 1}: token has invalid characters`);
+    if (!/^[A-Za-z0-9._~-]+$/.test(token)) {
+      // removed + / =
+      throw new Error(
+        `AGENT_TOKENS entry ${i + 1}: token may only use A-Z a-z 0-9 . _ ~ -`,
+      );
     }
     if (!AGENT_ID.test(agent)) {
-      throw new Error(`AGENT_TOKENS entry ${i + 1}: agent id must match ${AGENT_ID}`);
+      throw new Error(
+        `AGENT_TOKENS entry ${i + 1}: agent id must match ${AGENT_ID}`,
+      );
     }
-    if (map.has(token)) throw new Error(`AGENT_TOKENS entry ${i + 1}: duplicate token`);
-    if (seenAgents.has(agent)) throw new Error(`AGENT_TOKENS entry ${i + 1}: duplicate agent id "${agent}"`);
+    if (map.has(token))
+      throw new Error(`AGENT_TOKENS entry ${i + 1}: duplicate token`);
+    if (seenAgents.has(agent))
+      throw new Error(
+        `AGENT_TOKENS entry ${i + 1}: duplicate agent id "${agent}"`,
+      );
 
     map.set(token, agent);
     seenAgents.add(agent);

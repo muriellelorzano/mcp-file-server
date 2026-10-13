@@ -16,7 +16,9 @@ export const TOKEN_B = "b".repeat(40);
  *          <base>/audit.jsonl <- audit log for this test
  */
 export async function makeWorkspace(overrides: Record<string, string> = {}) {
-  const base = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "mcpws-")));
+  const base = await fs.realpath(
+    await fs.mkdtemp(path.join(os.tmpdir(), "mcpws-")),
+  );
   const root = path.join(base, "workspace");
   const outside = path.join(base, "outside");
   const auditPath = path.join(base, "audit.jsonl");
@@ -77,17 +79,25 @@ export async function connectAgent(ws: TestWorkspace, agentId: string) {
 }
 
 /** Calls a tool; protocol-level schema failures and tool errors both come back as isError. */
-export async function callTool(client: Client, name: string, args: Record<string, unknown> = {}) {
+export async function callTool(
+  client: Client,
+  name: string,
+  args: Record<string, unknown> = {},
+) {
   try {
     const r = await client.callTool({ name, arguments: args });
-    const text = (r.content as Array<{ text?: string }>).map((c) => c.text ?? "").join("\n");
+    const text = (r.content as Array<{ text?: string }>)
+      .map((c) => c.text ?? "")
+      .join("\n");
     return { isError: Boolean(r.isError), text };
   } catch (err) {
     return { isError: true, text: String(err) };
   }
 }
 
-export async function readAudit(ws: TestWorkspace): Promise<Array<Record<string, unknown>>> {
+export async function readAudit(
+  ws: TestWorkspace,
+): Promise<Array<Record<string, unknown>>> {
   await ws.services.audit.flush();
   const text = await fs.readFile(ws.auditPath, "utf8").catch(() => "");
   return text
